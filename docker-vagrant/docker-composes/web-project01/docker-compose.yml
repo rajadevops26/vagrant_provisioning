@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  web01:
+    build: ./php
+    container_name: web-project01
+    environment:
+      - VIRTUAL_HOST=web-project01.com
+    volumes:
+      - ./html:/var/www/html
+    restart: always
+
+networks:
+  default:
+    external:
+      #name: web-project01_network
+      name: common_link

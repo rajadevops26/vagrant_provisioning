@@ -1,0 +1,1 @@
+{"virtualbox":{"/docker-composes":{"guestpath":"/docker-composes","hostpath":"C:/Users/Rajamanoheryogi/k8s/docker_vagrant/docker-composes","disabled":false,"__vagrantfile":true},"/vagrant":{"guestpath":"/vagrant","hostpath":"C:/Users/Rajamanoheryogi/k8s/docker_vagrant","disabled":false,"__vagrantfile":true}}}

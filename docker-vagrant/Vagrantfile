@@ -1,0 +1,116 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+
+# Vagrant creation
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure("2") do |config|
+  
+  config.vm.box = "bento/ubuntu-18.04"
+
+  # config.vm.box_check_update = false
+  #config.vm.network "forwarded_port", guest: 22, host: 22
+
+  config.vm.network "forwarded_port", guest: 80, host: 80
+  config.vm.network "forwarded_port", guest: 443, host: 443
+  config.vm.network "private_network", ip: "192.168.11.11"
+
+  #config.vm.network "public_network", ip: "192.168.12.109"
+
+  config.vm.synced_folder "./docker-composes", "/docker-composes"
+  config.vm.provider "virtualbox" do |vb|
+
+    # Display the VirtualBox GUI when booting the machine
+    #vb.gui = true
+    # Customize the amount of memory on the VM:
+    vb.memory = "2048"
+    vb.cpus = 1
+    vb.name = "rajaserver-qa"
+    end
+  
+
+
+  # https://docs.vagrantup.com/v2/push/atlas.html for more information.
+  # config.push.define "atlas" do |push|
+  #   push.app = "YOUR_ATLAS_USERNAME/YOUR_APPLICATION_NAME"
+  # end
+
+  # Enable provisioning with a shell script. Additional provisioners such as
+  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
+
+
+
+  config.vm.provision "shell", inline: $setup
+  config.vm.provision "shell", run: "always", inline: $start
+end
+
+
+
+
+# $setup for install docker
+
+
+# echo "[TASK 2] Install docker container engine"
+# yum install -y -q yum-utils device-mapper-persistent-data lvm2 > /dev/null 2>&1
+# yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo > /dev/null 2>&1
+# yum install -y -q docker-ce >/dev/null 2>&1
+
+# Enable docker service
+# echo "[TASK 3] Enable and start docker service"
+# systemctl enable docker >/dev/null 2>&1
+# systemctl start docker
+
+
+
+$setup = <<SCRIPT
+  ## install docker
+  
+  sudo apt-get remove docker docker-engine
+  # sudo apt-get -y install wget linux-image-4.18.0-1017-aws linux-headers-4.18.0-1017-aws
+  # $(uname -r) linux-image-4.18.0-1017-aws
+  #wget -qO- https://get.docker.com/ | sh
+  
+  sudo apt install apt-transport-https ca-certificates curl software-properties-common
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  sudo apt update
+  sudo apt install docker.io
+
+  sudo apt install docker-ce
+  sudo systemctl status docker
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  
+  docker -v
+  docker --version
+
+
+  sudo usermod -aG docker vagrant
+
+  ## restart docker
+  sudo service docker restart
+
+  ## install docker-compose
+  sudo curl -s -S -L https://github.com/docker/compose/releases/download/1.8.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+  sudo chmod +x /usr/local/bin/docker-compose
+  sudo date > /etc/bootstrapped
+
+  ## create docker network
+  #sudo docker network create --driver bridge web-project01_network
+  #sudo docker network create --driver bridge web-project02_network
+  sudo docker network create --driver bridge common_link
+SCRIPT
+
+# $start for install nginx
+
+$start = <<SCRIPT
+  ## up nginx-proxy
+  # sudo docker run -d -p 80:80 -e DEFAULT_HOST=foo.bar.com -v /var/run/docker.sock:/tmp/docker.sock:ro nginx:latest
+  sudo /usr/local/bin/docker-compose -f /docker-composes/proxy/docker-compose.yml stop 2>&1
+  sudo /usr/local/bin/docker-compose -f /docker-composes/proxy/docker-compose.yml rm -f 2>&1
+  sudo /usr/local/bin/docker-compose -f /docker-composes/proxy/docker-compose.yml up -d
+
+  
+SCRIPT
+

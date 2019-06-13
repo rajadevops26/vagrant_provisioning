@@ -1,0 +1,17 @@
+version: '2'
+
+services:
+  web02:
+    image: nginx
+    container_name: web-project02
+    environment:
+      - VIRTUAL_HOST=web-project02.com
+    volumes:
+      - ./html:/usr/share/nginx/html
+    restart: always
+
+networks:
+  default:
+    external:
+      #name: web-project02_network
+      name: common_link
